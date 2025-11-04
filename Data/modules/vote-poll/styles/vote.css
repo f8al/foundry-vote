@@ -50,3 +50,16 @@
   font-size: 0.8rem;
   opacity: 0.8;
 }
+.vote-poll-end-button {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid #e57373;
+  background: rgba(231, 76, 60, 0.15);
+  color: #e57373;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.vote-poll-end-button:hover {
+  background: rgba(231, 76, 60, 0.30);
+}
