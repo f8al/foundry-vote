@@ -2,7 +2,7 @@
   "id": "vote-poll",
   "title": "Table Vote Command",
   "description": "Adds a /vote command to create quick table polls in chat.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "authors": [
     { "name": "f8al" }
   ],
