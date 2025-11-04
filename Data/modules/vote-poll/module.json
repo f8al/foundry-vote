@@ -1,0 +1,15 @@
+{
+  "id": "vote-poll",
+  "title": "Table Vote Command",
+  "description": "Adds a /vote command to create quick table polls in chat.",
+  "version": "1.0.0",
+  "authors": [
+    { "name": "f8al" }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "esmodules": ["scripts/vote.js"],
+  "styles": ["styles/vote.css"]
+}
