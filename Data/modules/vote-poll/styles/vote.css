@@ -24,6 +24,13 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Highlight your selected option */
+.vote-poll-button.selected {
+  border-color: #ffb74d;
+  box-shadow: 0 0 4px rgba(255, 183, 77, 0.8);
+  background: rgba(255, 183, 77, 0.12);
+}
+
 .vote-poll-results {
   border-top: 1px dashed rgba(255, 255, 255, 0.15);
   padding-top: 0.25rem;
@@ -31,6 +38,11 @@
 
 .vote-poll-result-line {
   font-size: 0.85rem;
+}
+
+/* Highlight your line in the results */
+.vote-poll-result-line.selected {
+  font-weight: 600;
 }
 
 .vote-poll-summary {
