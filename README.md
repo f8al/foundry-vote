@@ -1,6 +1,10 @@
 # foundry-vote
-a module for FoundryVTT to add a /vote command to chat
+A module for FoundryVTT to add a /vote command to chat
 
+## Features:
+- create simple poll votes with the `/vote` command
+- logs vote results to a journal entry
+- has per user choice highlighting 
 
 ## How to use it at the table:
 
