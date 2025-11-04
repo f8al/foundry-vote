@@ -10,9 +10,89 @@ function dup(obj) {
 }
 
 /**
+ * Build a summary object for counts/percentages.
+ */
+function buildPollSummary(poll) {
+  const totalVotes =
+    poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0) || 0;
+
+  const options = poll.options.map(opt => {
+    const count = opt.votes?.length || 0;
+    const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+    return {
+      key: opt.key,
+      label: opt.label,
+      count,
+      percentage
+    };
+  });
+
+  return { totalVotes, options };
+}
+
+/**
+ * Build HTML content for the journal entry.
+ */
+function buildPollHtml(poll) {
+  const summary = buildPollSummary(poll);
+  const esc = foundry.utils?.escapeHTML
+    ? foundry.utils.escapeHTML(poll.question)
+    : poll.question;
+
+  let html = `<h1>Poll Results</h1>`;
+  html += `<p><strong>Question:</strong> ${esc}</p>`;
+  html += `<ul>`;
+
+  for (const opt of summary.options) {
+    html += `<li><strong>${opt.label}</strong>: ${opt.count} vote${opt.count !== 1 ? "s" : ""} (${opt.percentage}%)</li>`;
+  }
+
+  html += `</ul>`;
+  html += `<p><em>Total votes: ${summary.totalVotes}</em></p>`;
+
+  return html;
+}
+
+/**
+ * Create or update the JournalEntry for this poll (GM only).
+ */
+async function upsertPollJournal(message, poll) {
+  if (!game.user.isGM) return;
+  if (!game.journal || !JournalEntry) return;
+
+  const summary = buildPollSummary(poll);
+  const content = buildPollHtml(poll);
+
+  // Try to get existing journal
+  let journalId = message.getFlag(MODULE_ID, "journalEntryId");
+  let journal = journalId ? game.journal.get(journalId) : null;
+
+  const PERM = CONST.DOCUMENT_OWNERSHIP_LEVELS ?? CONST.DOCUMENT_PERMISSION_LEVELS;
+
+  if (!journal) {
+    // Create new journal entry for this poll
+    const truncatedQuestion =
+      poll.question.length > 60 ? poll.question.slice(0, 57) + "..." : poll.question;
+
+    journal = await JournalEntry.create({
+      name: `Poll: ${truncatedQuestion}`,
+      content,
+      ownership: {
+        default: PERM.OBSERVER
+      }
+    });
+
+    await message.setFlag(MODULE_ID, "journalEntryId", journal.id);
+  } else {
+    // Update existing journal entry
+    await journal.update({ content });
+  }
+}
+
+/**
  * 1) Slash command: /vote ...
  */
-Hooks.on("chatMessage", (chatLog, content, chatData) => {
+Hooks.on("chatMessage", async (chatLog, content, chatData) => {
   const command = "/vote";
 
   if (!content.trim().toLowerCase().startsWith(command)) return;
@@ -25,7 +105,7 @@ Hooks.on("chatMessage", (chatLog, content, chatData) => {
   }
 
   // Split on " or " to detect multiple options.
-  // If only one part -> Yes/No poll.
+  // If >1 part => multi-option poll. If 1 part => Yes/No poll.
   const parts = text
     .split(/\s+or\s+/i)
     .map(s => s.trim())
@@ -39,7 +119,7 @@ Hooks.on("chatMessage", (chatLog, content, chatData) => {
       options: parts.map((label, i) => ({
         key: `opt${i}`,
         label,
-        votes: []            // array of user IDs
+        votes: [] // array of user IDs
       }))
     };
   } else {
@@ -53,13 +133,12 @@ Hooks.on("chatMessage", (chatLog, content, chatData) => {
     };
   }
 
-  // Escape question text
   const esc = foundry.utils?.escapeHTML
     ? foundry.utils.escapeHTML(poll.question)
     : poll.question;
 
   // Create the poll chat message
-  ChatMessage.create({
+  await ChatMessage.create({
     user: game.user.id,
     speaker: { alias: game.user.name },
     type: CONST.CHAT_MESSAGE_TYPES.OOC,
@@ -76,7 +155,7 @@ Hooks.on("chatMessage", (chatLog, content, chatData) => {
 });
 
 /**
- * 2) Render poll UI in chat messages
+ * 2) Render poll UI in chat messages (with user highlighting)
  */
 Hooks.on("renderChatMessage", (message, html, data) => {
   const poll = message.getFlag(MODULE_ID, "poll");
@@ -85,31 +164,43 @@ Hooks.on("renderChatMessage", (message, html, data) => {
   const pollDiv = document.createElement("div");
   pollDiv.classList.add("vote-poll");
 
-  // Buttons container
   const buttonsDiv = document.createElement("div");
   buttonsDiv.classList.add("vote-poll-buttons");
 
-  // Results container
   const resultsDiv = document.createElement("div");
   resultsDiv.classList.add("vote-poll-results");
 
-  const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes.length, 0) || 0;
+  const { totalVotes, options } = buildPollSummary(poll);
+
+  const myUserId = game.user.id;
+  const myOption = poll.options.find(opt => (opt.votes || []).includes(myUserId));
+  const myOptionKey = myOption?.key;
 
   for (const opt of poll.options) {
+    const summaryOpt = options.find(o => o.key === opt.key);
+    const count = summaryOpt?.count ?? 0;
+    const percentage = summaryOpt?.percentage ?? 0;
+
     // Button for this option
     const btn = document.createElement("button");
     btn.type = "button";
     btn.dataset.optionKey = opt.key;
     btn.classList.add("vote-poll-button");
     btn.textContent = opt.label;
+    if (opt.key === myOptionKey) {
+      btn.classList.add("selected");
+    }
     buttonsDiv.appendChild(btn);
 
     // Result line
-    const count = opt.votes.length;
-    const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
     const resultLine = document.createElement("div");
     resultLine.classList.add("vote-poll-result-line");
-    resultLine.textContent = `${opt.label}: ${count} vote${count !== 1 ? "s" : ""} (${percentage}%)`;
+    if (opt.key === myOptionKey) {
+      resultLine.classList.add("selected");
+    }
+
+    const youSuffix = opt.key === myOptionKey ? " (you)" : "";
+    resultLine.textContent = `${opt.label}: ${count} vote${count !== 1 ? "s" : ""} (${percentage}%)${youSuffix}`;
     resultsDiv.appendChild(resultLine);
   }
 
@@ -140,7 +231,7 @@ Hooks.on("renderChatMessage", (message, html, data) => {
 });
 
 /**
- * 3) Socket handler — only GM updates the message
+ * 3) Socket handler — only GM updates the message & journal
  */
 Hooks.once("ready", () => {
   game.socket.on(`module.${MODULE_ID}`, async data => {
@@ -156,12 +247,16 @@ Hooks.once("ready", () => {
 
     // Remove this user from all options, then add to selected one
     for (const opt of poll.options) {
-      opt.votes = opt.votes.filter(id => id !== userId);
+      opt.votes = (opt.votes || []).filter(id => id !== userId);
       if (opt.key === optionKey) {
         opt.votes.push(userId);
       }
     }
 
+    // Update poll on the message
     await message.setFlag(MODULE_ID, "poll", poll);
+
+    // Also create/update the journal log
+    await upsertPollJournal(message, poll);
   });
 });
