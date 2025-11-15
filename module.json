@@ -1,0 +1,46 @@
+{
+  "id": "foundry-vote",
+  "title": "Table Vote Command",
+  "description": "Adds a /vote command allowing players to create quick polls in chat. Supports multi-option votes, per-user highlighting, GM-only poll closing, and automatic logging to a Journal Entry.",
+  "version": "1.0.0",
+
+  "authors": [
+    {
+      "name": "SecurityShrimp",
+      "url": "",
+      "discord": ""
+    }
+  ],
+
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13",
+    "maximum": "13"
+  },
+
+  "scripts": [],
+  "esmodules": [
+    "scripts/vote.js"
+  ],
+  "styles": [
+    "styles/vote.css"
+  ],
+
+  "socket": true,
+
+  "flags": {},
+
+  "manifest": "module.json",
+  "download": "",
+
+  "license": "MIT",
+  "readme": "",
+  "bugs": "",
+  "changelog": "",
+
+  "relationships": {
+    "systems": [],
+    "requires": [],
+    "recommends": []
+  }
+}
