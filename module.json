@@ -4,11 +4,13 @@
   "description": "Adds a /vote command allowing players to create quick polls in chat. Supports multi-option votes, per-user highlighting, GM-only poll closing, and automatic logging to a Journal Entry.",
   "version": "1.0.0",
 
-  "authors": [
+    "authors": [
     {
       "name": "SecurityShrimp",
-      "url": "",
-      "discord": ""
+      "email": "securityshrimp@proton.me",
+      "url": "https://www.securityshrimp.com",
+      "discord": "eekwinocks",
+      "flags": {}
     }
   ],
 
@@ -30,8 +32,8 @@
 
   "flags": {},
 
-  "manifest": "module.json",
-  "download": "",
+  "manifest": "https://github.com/f8al/foundry-vote/releases/download/latest/module.json",
+  "download": "https://github.com/f8al/foundry-vote/archive/refs/tags/latest.zip",
 
   "license": "MIT",
   "readme": "",
